@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF zu Bildern</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <style>
+        .loading {
+            display: none;
+            font-size: 1.2rem;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">PDF zu Bildern konvertieren</h1>
+        <form id="uploadForm">
+            <div class="mb-3">
+                <label for="pdfFile" class="form-label">PDF-Datei hochladen:</label>
+                <input type="file" class="form-control" id="pdfFile" name="pdf_file" accept="application/pdf">
+            </div>
+            <button type="submit" class="btn btn-primary">Konvertieren</button>
+        </form>
+        <div class="loading mt-3" id="loading">Bitte warten...</div>
+        <div id="images" class="row mt-4"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const loading = document.getElementById('loading');
+        const imagesDiv = document.getElementById('images');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            loading.style.display = 'block';
+            imagesDiv.innerHTML = '';
+
+            try {
+                const response = await fetch('/convert_pdf_to_images', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                loading.style.display = 'none';
+
+                if (data.image_urls) {
+                    data.image_urls.forEach(url => {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.className = 'img-thumbnail col-4';
+                        img.style.marginBottom = '10px';
+                        imagesDiv.appendChild(img);
+                    });
+                } else {
+                    alert('Fehler: ' + (data.error || 'Unbekannter Fehler'));
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                alert('Fehler: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
