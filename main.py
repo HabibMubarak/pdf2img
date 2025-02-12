@@ -3,6 +3,7 @@ import tempfile
 from flask import Flask, request, jsonify, render_template, send_file, send_from_directory
 import pdfplumber
 from io import BytesIO
+import base64
 
 app = Flask(__name__)
 
@@ -33,7 +34,9 @@ def convert_pdf_to_images():
                     img_io = BytesIO()
                     img.original.save(img_io, format='PNG')
                     img_io.seek(0)
-                    image_bytes.append(img_io.read())  # Speichere Bytes für jede Seite
+                    # Base64-Kodierung für JSON-kompatible Übertragung
+                    img_base64 = base64.b64encode(img_io.read()).decode("utf-8")
+                    image_bytes.append(img_base64)
 
                 elif use_temp:
                     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
@@ -42,8 +45,8 @@ def convert_pdf_to_images():
                     images.append(temp_file.name)
 
         if return_bytes:
-            # Konvertiere Bild-Bytes zu Hex-Strings und sende als JSON
-            return jsonify({'image_bytes': [img.hex() for img in image_bytes]})
+            return jsonify({'image_bytes': image_bytes})  # Base64-kodierte Bilder zurückgeben
+
 
         if expects_html:
             return render_template('result.html', image_urls=[f"/get_image?path={img}" for img in images])
